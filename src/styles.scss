@@ -1,7 +1,5 @@
-/* Import Ant Design styles */
 @import 'ng-zorro-antd/ng-zorro-antd.css';
 
-/* Global Styles */
 * {
   box-sizing: border-box;
 }
@@ -16,7 +14,6 @@ body {
   color: #333;
 }
 
-/* Ant Design overrides */
 .ant-card {
   border-radius: 8px;
 }
@@ -39,7 +36,6 @@ body {
   border-radius: 6px;
 }
 
-/* Custom scrollbar for the entire app */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -59,7 +55,6 @@ body {
   background: #a8a8a8;
 }
 
-/* Loading animation */
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -73,7 +68,39 @@ body {
   animation: spin 1s linear infinite;
 }
 
-/* Responsive utilities */
+.cdk-virtual-scroll-viewport {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  contain: strict;
+}
+
+.cdk-virtual-scroll-content-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  contain: content;
+}
+
+.cdk-virtual-scroll-orientation-vertical .cdk-virtual-scroll-content-wrapper {
+  min-height: 100%;
+}
+
+.cdk-virtual-scroll-orientation-horizontal .cdk-virtual-scroll-content-wrapper {
+  min-width: 100%;
+}
+
+.cdk-virtual-scroll-spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 1px;
+  width: 1px;
+  transform-origin: 0 0;
+}
+
 @media (max-width: 768px) {
   body {
     font-size: 14px;

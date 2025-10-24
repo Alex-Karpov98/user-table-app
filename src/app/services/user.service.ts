@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, of } from 'rxjs';
+import { BehaviorSubject, tap, delay, timer, Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { User, UserFilters, SortConfig } from '../models/user.model';
 
@@ -7,7 +7,7 @@ import { User, UserFilters, SortConfig } from '../models/user.model';
   providedIn: 'root',
 })
 export class UserService {
-  private users: User[] = [];
+  private allUsers: User[] = [];
   private filteredUsers: User[] = [];
   private currentFilters: UserFilters = {
     searchText: '',
@@ -17,134 +17,135 @@ export class UserService {
   private currentSort: SortConfig = { field: 'firstName', direction: 'asc' };
   private currentPage = 0;
   private pageSize = 50;
-  private hasMoreData = true;
+  private isInfiniteScrollMode = false;
 
   private usersSubject = new BehaviorSubject<User[]>([]);
   private loadingSubject = new BehaviorSubject<boolean>(false);
+  private hasMoreDataSubject = new BehaviorSubject<boolean>(true);
+
   public users$ = this.usersSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
+  public hasMoreData$ = this.hasMoreDataSubject.asObservable();
+
+  private filterSubscription?: Subscription;
+  private loadMoreSubscription?: Subscription;
+  private initialLoadSubscription?: Subscription;
 
   constructor(private http: HttpClient) {
-    this.loadMockData();
+    this.loadInitialData();
   }
 
-  private loadMockData(): void {
+  private loadInitialData(): void {
     this.loadingSubject.next(true);
 
-    setTimeout(() => {
-      this.http.get<User[]>('/mock-users.json').subscribe({
-        next: users => {
-          this.users = users;
-          this.loadingSubject.next(false);
-          this.applyFiltersAndSort();
-        },
-        error: error => {
-          this.users = [];
-          this.loadingSubject.next(false);
-          this.applyFiltersAndSort();
-        },
+    this.initialLoadSubscription = this.http
+      .get<User[]>('/mock-users.json')
+      .pipe(
+        delay(800),
+        tap({
+          next: users => {
+            this.allUsers = users;
+            this.loadingSubject.next(false);
+          },
+          error: () => {
+            this.allUsers = [];
+            this.loadingSubject.next(false);
+          },
+        })
+      )
+      .subscribe(() => {
+        this.applyFiltersAndSort();
       });
-    }, 1500);
   }
 
   private applyFiltersAndSort(): void {
-    let filtered = [...this.users];
-
-    // Apply search filter
-    if (this.currentFilters.searchText) {
-      const searchLower = this.currentFilters.searchText.toLowerCase();
-      filtered = filtered.filter(
-        user =>
+    const filtered = this.allUsers.filter((user: User) => {
+      if (this.currentFilters.searchText) {
+        const searchLower = this.currentFilters.searchText.toLowerCase();
+        const matchesSearch =
           user.firstName.toLowerCase().includes(searchLower) ||
           user.lastName.toLowerCase().includes(searchLower) ||
-          user.phoneNumber.includes(searchLower)
-      );
-    }
-
-    // Apply active filter
-    if (this.currentFilters.activeFilter !== 'all') {
-      const isActive = this.currentFilters.activeFilter === 'active';
-      filtered = filtered.filter(user => user.active === isActive);
-    }
-
-    // Apply age filter
-    if (this.currentFilters.ageFilter !== 'all') {
-      const now = new Date();
-      filtered = filtered.filter(user => {
-        const birthDate = new Date(user.dateOfBirth);
-        const age = now.getFullYear() - birthDate.getFullYear();
-        const monthDiff = now.getMonth() - birthDate.getMonth();
-        const actualAge =
-          monthDiff < 0 ||
-          (monthDiff === 0 && now.getDate() < birthDate.getDate())
-            ? age - 1
-            : age;
-
-        if (this.currentFilters.ageFilter === 'under18') {
-          return actualAge < 18;
-        } else if (this.currentFilters.ageFilter === 'over18') {
-          return actualAge >= 18;
-        }
-        return true;
-      });
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
-
-      switch (this.currentSort.field) {
-        case 'firstName':
-          aValue = a.firstName;
-          bValue = b.firstName;
-          break;
-        case 'lastName':
-          aValue = a.lastName;
-          bValue = b.lastName;
-          break;
-        case 'dateOfBirth':
-          aValue = new Date(a.dateOfBirth);
-          bValue = new Date(b.dateOfBirth);
-          break;
+          user.phoneNumber.includes(searchLower);
+        if (!matchesSearch) return false;
       }
 
-      if (aValue < bValue) return this.currentSort.direction === 'asc' ? -1 : 1;
-      if (aValue > bValue) return this.currentSort.direction === 'asc' ? 1 : -1;
-      return 0;
+      if (this.currentFilters.activeFilter !== 'all') {
+        const isActive = this.currentFilters.activeFilter === 'active';
+        if (user.active !== isActive) return false;
+      }
+
+      if (this.currentFilters.ageFilter !== 'all') {
+        const age = this.calculateAge(user.dateOfBirth);
+        if (this.currentFilters.ageFilter === 'under18' && age >= 18) {
+          return false;
+        }
+        if (this.currentFilters.ageFilter === 'over18' && age < 18) {
+          return false;
+        }
+      }
+
+      return true;
     });
+
+    filtered.sort(this.getSortComparator());
 
     this.filteredUsers = filtered;
     this.currentPage = 0;
-    this.hasMoreData = filtered.length > 0;
 
-    // Clear existing users and load new ones
-    this.usersSubject.next([]);
-
-    if (filtered.length > 0) {
-      this.loadMoreUsers();
-    } else {
-      // No results found, stop loading
-      this.loadingSubject.next(false);
+    if (this.filterSubscription) {
+      this.filterSubscription.unsubscribe();
     }
+
+    this.filterSubscription = timer(400).subscribe(() => {
+      if (this.isInfiniteScrollMode) {
+        const firstPage = filtered.slice(0, this.pageSize);
+        this.usersSubject.next(firstPage);
+        this.hasMoreDataSubject.next(filtered.length > this.pageSize);
+        this.currentPage = 1;
+      } else {
+        this.usersSubject.next(filtered);
+        this.hasMoreDataSubject.next(false);
+      }
+      this.loadingSubject.next(false);
+    });
   }
 
-  public loadMoreUsers(): void {
-    const startIndex = this.currentPage * this.pageSize;
-    const endIndex = startIndex + this.pageSize;
-    const newUsers = this.filteredUsers.slice(startIndex, endIndex);
+  private calculateAge(dateOfBirth: string): number {
+    const now = new Date();
+    const birthDate = new Date(dateOfBirth);
+    let age = now.getFullYear() - birthDate.getFullYear();
+    const monthDiff = now.getMonth() - birthDate.getMonth();
 
-    if (newUsers.length > 0) {
-      setTimeout(() => {
-        const currentUsers = this.usersSubject.value;
-        this.usersSubject.next([...currentUsers, ...newUsers]);
-        this.currentPage++;
-        this.hasMoreData = endIndex < this.filteredUsers.length;
-        this.loadingSubject.next(false);
-      }, 800);
-    } else {
-      // No more users to load, stop loading
-      this.loadingSubject.next(false);
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && now.getDate() < birthDate.getDate())
+    ) {
+      age--;
     }
+
+    return age;
+  }
+
+  private getSortComparator(): (a: User, b: User) => number {
+    const { field, direction } = this.currentSort;
+    const multiplier = direction === 'asc' ? 1 : -1;
+
+    return (a: User, b: User) => {
+      let aValue: string | Date;
+      let bValue: string | Date;
+
+      if (field === 'dateOfBirth') {
+        aValue = new Date(a[field]);
+        bValue = new Date(b[field]);
+      } else {
+        aValue = a[field];
+        bValue = b[field];
+      }
+
+      if (aValue < bValue) return -1 * multiplier;
+      if (aValue > bValue) return 1 * multiplier;
+      return 0;
+    };
   }
 
   public searchUsers(searchText: string): void {
@@ -169,18 +170,68 @@ export class UserService {
     field: 'firstName' | 'lastName' | 'dateOfBirth',
     direction: 'asc' | 'desc'
   ): void {
+    this.loadingSubject.next(true);
     this.currentSort = { field, direction };
     this.applyFiltersAndSort();
   }
 
-  public hasMoreDataAvailable(): boolean {
-    return this.hasMoreData;
+  public loadMoreUsers(): void {
+    if (!this.isInfiniteScrollMode || this.loadingSubject.value) {
+      return;
+    }
+
+    const startIndex = this.currentPage * this.pageSize;
+    const endIndex = startIndex + this.pageSize;
+    const nextBatch = this.filteredUsers.slice(startIndex, endIndex);
+
+    if (nextBatch.length > 0) {
+      this.loadingSubject.next(true);
+
+      if (this.loadMoreSubscription) {
+        this.loadMoreSubscription.unsubscribe();
+      }
+
+      this.loadMoreSubscription = timer(600).subscribe(() => {
+        const currentUsers = this.usersSubject.value;
+        this.usersSubject.next([...currentUsers, ...nextBatch]);
+        this.currentPage++;
+        this.hasMoreDataSubject.next(endIndex < this.filteredUsers.length);
+        this.loadingSubject.next(false);
+      });
+    } else {
+      this.hasMoreDataSubject.next(false);
+    }
   }
 
-  public resetTable(): void {
-    this.usersSubject.next([]);
-    this.currentPage = 0;
-    this.hasMoreData = true;
-    this.loadMoreUsers();
+  public setScrollingMode(isInfinite: boolean): void {
+    this.isInfiniteScrollMode = isInfinite;
+    this.applyFiltersAndSort();
+  }
+
+  public setPageSize(size: number): void {
+    this.pageSize = Math.max(10, Math.min(500, size));
+    if (this.isInfiniteScrollMode) {
+      this.applyFiltersAndSort();
+    }
+  }
+
+  public getPageSize(): number {
+    return this.pageSize;
+  }
+
+  public isInfiniteMode(): boolean {
+    return this.isInfiniteScrollMode;
+  }
+
+  public ngOnDestroy(): void {
+    if (this.filterSubscription) {
+      this.filterSubscription.unsubscribe();
+    }
+    if (this.loadMoreSubscription) {
+      this.loadMoreSubscription.unsubscribe();
+    }
+    if (this.initialLoadSubscription) {
+      this.initialLoadSubscription.unsubscribe();
+    }
   }
 }

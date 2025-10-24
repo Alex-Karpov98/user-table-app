@@ -7,6 +7,44 @@
           >Loaded: {{ getCurrentUserCount() }} users</span
         >
       </div>
+
+      <!-- Scrolling Mode Controls -->
+      <div class="scroll-controls">
+        <div class="control-group">
+          <label class="control-label">
+            <i nz-icon nzType="deployment-unit" nzTheme="outline"></i>
+            Infinite Scroll Mode:
+          </label>
+          <nz-switch
+            [ngModel]="isInfiniteScrollMode"
+            (ngModelChange)="toggleScrollMode($event)"
+            [nzCheckedChildren]="checkedTemplate"
+            [nzUnCheckedChildren]="unCheckedTemplate"
+          ></nz-switch>
+          <ng-template #checkedTemplate>
+            <i nz-icon nzType="check"></i>
+          </ng-template>
+          <ng-template #unCheckedTemplate>
+            <i nz-icon nzType="close"></i>
+          </ng-template>
+        </div>
+
+        <div class="control-group" *ngIf="isInfiniteScrollMode">
+          <label class="control-label">
+            <i nz-icon nzType="table" nzTheme="outline"></i>
+            Items per page:
+          </label>
+          <nz-input-number
+            [(ngModel)]="pageSize"
+            (ngModelChange)="onPageSizeChange($event)"
+            [nzMin]="10"
+            [nzMax]="500"
+            [nzStep]="10"
+            class="page-size-input"
+          ></nz-input-number>
+        </div>
+      </div>
+
       <div class="search-row">
         <nz-input-group [nzSuffix]="suffixIconSearch" class="search-input">
           <input
@@ -59,9 +97,102 @@
         </nz-spin>
       </div>
 
-      <!-- Table with Data -->
+      <!-- Virtual Scroll Mode - CDK Virtual Scroll -->
+      <div
+        *ngIf="!initialLoading && !isInfiniteScrollMode && users.length > 0"
+        class="virtual-table"
+      >
+        <div class="table-header">
+          <div class="header-row">
+            <div class="header-cell cell-no">No</div>
+            <div
+              class="header-cell cell-name sortable"
+              (click)="onSort('firstName')"
+            >
+              <span class="header-content">
+                First Name
+                <i
+                  nz-icon
+                  [nzType]="getSortIcon('firstName')"
+                  nzTheme="outline"
+                  class="sort-icon"
+                ></i>
+              </span>
+            </div>
+            <div
+              class="header-cell cell-name sortable"
+              (click)="onSort('lastName')"
+            >
+              <span class="header-content">
+                Last Name
+                <i
+                  nz-icon
+                  [nzType]="getSortIcon('lastName')"
+                  nzTheme="outline"
+                  class="sort-icon"
+                ></i>
+              </span>
+            </div>
+            <div
+              class="header-cell cell-dob sortable"
+              (click)="onSort('dateOfBirth')"
+            >
+              <span class="header-content">
+                Date of Birth
+                <i
+                  nz-icon
+                  [nzType]="getSortIcon('dateOfBirth')"
+                  nzTheme="outline"
+                  class="sort-icon"
+                ></i>
+              </span>
+            </div>
+            <div class="header-cell cell-phone">Phone Number</div>
+            <div class="header-cell cell-status">Status</div>
+          </div>
+        </div>
+
+        <cdk-virtual-scroll-viewport
+          [itemSize]="46"
+          [minBufferPx]="200"
+          [maxBufferPx]="400"
+          class="table-viewport"
+        >
+          <div
+            class="table-row"
+            *cdkVirtualFor="
+              let user of users;
+              let i = index;
+              trackBy: trackByUserId
+            "
+          >
+            <div class="table-cell cell-no">{{ i + 1 }}</div>
+            <div class="table-cell cell-name">
+              <span [innerHTML]="user.firstName | highlight: searchText"></span>
+            </div>
+            <div class="table-cell cell-name">
+              <span [innerHTML]="user.lastName | highlight: searchText"></span>
+            </div>
+            <div class="table-cell cell-dob">
+              {{ formatDate(user.dateOfBirth) }}
+            </div>
+            <div class="table-cell cell-phone">
+              <span
+                [innerHTML]="user.phoneNumber | highlight: searchText"
+              ></span>
+            </div>
+            <div class="table-cell cell-status">
+              <nz-tag [nzColor]="getActiveStatusColor(user.active)">
+                {{ getActiveStatusText(user.active) }}
+              </nz-tag>
+            </div>
+          </div>
+        </cdk-virtual-scroll-viewport>
+      </div>
+
+      <!-- Infinite Scroll Mode - Regular Table -->
       <nz-table
-        *ngIf="!initialLoading && users.length > 0"
+        *ngIf="!initialLoading && isInfiniteScrollMode && users.length > 0"
         [nzData]="users"
         [nzLoading]="false"
         [nzShowPagination]="false"
@@ -135,19 +266,15 @@
           <tr *ngFor="let user of users; trackBy: trackByUserId; let i = index">
             <td>{{ i + 1 }}</td>
             <td>
-              <span
-                [innerHTML]="highlightText(user.firstName, searchText)"
-              ></span>
+              <span [innerHTML]="user.firstName | highlight: searchText"></span>
             </td>
             <td>
-              <span
-                [innerHTML]="highlightText(user.lastName, searchText)"
-              ></span>
+              <span [innerHTML]="user.lastName | highlight: searchText"></span>
             </td>
             <td>{{ formatDate(user.dateOfBirth) }}</td>
             <td>
               <span
-                [innerHTML]="highlightText(user.phoneNumber, searchText)"
+                [innerHTML]="user.phoneNumber | highlight: searchText"
               ></span>
             </td>
             <td>
@@ -159,22 +286,47 @@
         </tbody>
       </nz-table>
 
-      <!-- Loading indicator for infinite scroll -->
+      <!-- Loading overlay for sort/search/filter operations -->
       <div
-        *ngIf="loading && users.length > 0"
+        *ngIf="!initialLoading && loading && !isLoadingMore"
         class="loading-overlay"
-        [style.opacity]="0.8"
+        [style.opacity]="0.9"
       >
         <nz-spin nzSize="default">
           <div class="loading-content">
-            <div class="loading-text">Loading more users...</div>
+            <div class="loading-text">Updating results...</div>
           </div>
         </nz-spin>
       </div>
 
+      <!-- Loading indicator for infinite scroll - Fixed overlay -->
+      <div
+        *ngIf="isInfiniteScrollMode && isLoadingMore && hasMoreData"
+        class="scroll-loading-overlay"
+      >
+        <nz-spin nzSize="small">
+          <div class="loading-content">
+            <div class="loading-text">Loading more...</div>
+          </div>
+        </nz-spin>
+      </div>
+
+      <!-- End of list indicator - Fixed overlay -->
+      <div
+        *ngIf="
+          isInfiniteScrollMode && !hasMoreData && !loading && users.length > 0
+        "
+        class="end-of-list-overlay"
+      >
+        <i nz-icon nzType="check-circle" nzTheme="outline"></i>
+        <span>All data loaded</span>
+      </div>
+
       <!-- Empty state -->
       <nz-empty
-        *ngIf="!initialLoading && !loading && users.length === 0"
+        *ngIf="
+          !initialLoading && !loading && users.length === 0 && hasDataLoaded
+        "
         nzNotFoundContent="No users found"
         [nzNotFoundImage]="'/empty.svg'"
       ></nz-empty>
