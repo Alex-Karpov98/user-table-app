@@ -4,29 +4,24 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { NZ_I18N, en_US } from 'ng-zorro-antd/i18n';
 import { NZ_ICONS } from 'ng-zorro-antd/icon';
-import { 
-  SearchOutline, 
+import {
+  SearchOutline,
   ArrowUpOutline,
   ArrowDownOutline,
-  MenuOutline
+  MenuOutline,
 } from '@ant-design/icons-angular/icons';
 
 import { routes } from './app.routes';
 
-const icons = [
-  SearchOutline,
-  ArrowUpOutline,
-  ArrowDownOutline,
-  MenuOutline
-];
+const icons = [SearchOutline, ArrowUpOutline, ArrowDownOutline, MenuOutline];
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }), 
+    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(),
     provideAnimations(),
     { provide: NZ_I18N, useValue: en_US },
-    { provide: NZ_ICONS, useValue: icons }
-  ]
+    { provide: NZ_ICONS, useValue: icons },
+  ],
 };

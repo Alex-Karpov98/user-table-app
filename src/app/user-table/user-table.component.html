@@ -3,14 +3,16 @@
     <!-- Search and Filters Section -->
     <div class="filters-section">
       <div class="user-count">
-        <span class="count-text">Loaded: {{ getCurrentUserCount() }} users</span>
+        <span class="count-text"
+          >Loaded: {{ getCurrentUserCount() }} users</span
+        >
       </div>
       <div class="search-row">
         <nz-input-group [nzSuffix]="suffixIconSearch" class="search-input">
-          <input 
-            type="text" 
-            nz-input 
-            placeholder="Search users by name or phone..." 
+          <input
+            type="text"
+            nz-input
+            placeholder="Search users by name or phone..."
             [(ngModel)]="searchText"
             (input)="onSearchChange()"
           />
@@ -19,10 +21,10 @@
           <i nz-icon nzType="search" nzTheme="outline"></i>
         </ng-template>
       </div>
-      
+
       <div class="filter-row">
-        <nz-select 
-          [(ngModel)]="activeFilter" 
+        <nz-select
+          [(ngModel)]="activeFilter"
           (ngModelChange)="onActiveFilterChange()"
           class="filter-select"
           nzPlaceHolder="Filter by status"
@@ -32,8 +34,8 @@
           <nz-option nzValue="inactive" nzLabel="Inactive Only"></nz-option>
         </nz-select>
 
-        <nz-select 
-          [(ngModel)]="ageFilter" 
+        <nz-select
+          [(ngModel)]="ageFilter"
           (ngModelChange)="onAgeFilterChange()"
           class="filter-select"
           nzPlaceHolder="Filter by age"
@@ -58,9 +60,9 @@
       </div>
 
       <!-- Table with Data -->
-      <nz-table 
+      <nz-table
         *ngIf="!initialLoading && users.length > 0"
-        [nzData]="users" 
+        [nzData]="users"
         [nzLoading]="false"
         [nzShowPagination]="false"
         [nzScroll]="{ y: '400px' }"
@@ -69,37 +71,60 @@
         <thead>
           <tr>
             <th>No</th>
-            <th 
-              nzSortKey="firstName" 
+            <th
+              nzSortKey="firstName"
               (nzSortOrderChange)="onSort('firstName')"
-              [nzSortOrder]="currentSort.field === 'firstName' ? currentSort.direction : null"
+              [nzSortOrder]="
+                currentSort.field === 'firstName' ? currentSort.direction : null
+              "
               class="sortable-header"
             >
               <span class="header-content">
                 First Name
-                <i nz-icon [nzType]="getSortIcon('firstName')" nzTheme="outline" class="sort-icon"></i>
+                <i
+                  nz-icon
+                  [nzType]="getSortIcon('firstName')"
+                  nzTheme="outline"
+                  class="sort-icon"
+                ></i>
               </span>
             </th>
-            <th 
-              nzSortKey="lastName" 
+            <th
+              nzSortKey="lastName"
               (nzSortOrderChange)="onSort('lastName')"
-              [nzSortOrder]="currentSort.field === 'lastName' ? currentSort.direction : null"
+              [nzSortOrder]="
+                currentSort.field === 'lastName' ? currentSort.direction : null
+              "
               class="sortable-header"
             >
               <span class="header-content">
                 Last Name
-                <i nz-icon [nzType]="getSortIcon('lastName')" nzTheme="outline" class="sort-icon"></i>
+                <i
+                  nz-icon
+                  [nzType]="getSortIcon('lastName')"
+                  nzTheme="outline"
+                  class="sort-icon"
+                ></i>
               </span>
             </th>
-            <th 
-              nzSortKey="dateOfBirth" 
+            <th
+              nzSortKey="dateOfBirth"
               (nzSortOrderChange)="onSort('dateOfBirth')"
-              [nzSortOrder]="currentSort.field === 'dateOfBirth' ? currentSort.direction : null"
+              [nzSortOrder]="
+                currentSort.field === 'dateOfBirth'
+                  ? currentSort.direction
+                  : null
+              "
               class="sortable-header"
             >
               <span class="header-content">
                 Date of Birth
-                <i nz-icon [nzType]="getSortIcon('dateOfBirth')" nzTheme="outline" class="sort-icon"></i>
+                <i
+                  nz-icon
+                  [nzType]="getSortIcon('dateOfBirth')"
+                  nzTheme="outline"
+                  class="sort-icon"
+                ></i>
               </span>
             </th>
             <th>Phone Number</th>
@@ -110,14 +135,20 @@
           <tr *ngFor="let user of users; trackBy: trackByUserId; let i = index">
             <td>{{ i + 1 }}</td>
             <td>
-              <span [innerHTML]="highlightText(user.firstName, searchText)"></span>
+              <span
+                [innerHTML]="highlightText(user.firstName, searchText)"
+              ></span>
             </td>
             <td>
-              <span [innerHTML]="highlightText(user.lastName, searchText)"></span>
+              <span
+                [innerHTML]="highlightText(user.lastName, searchText)"
+              ></span>
             </td>
             <td>{{ formatDate(user.dateOfBirth) }}</td>
             <td>
-              <span [innerHTML]="highlightText(user.phoneNumber, searchText)"></span>
+              <span
+                [innerHTML]="highlightText(user.phoneNumber, searchText)"
+              ></span>
             </td>
             <td>
               <nz-tag [nzColor]="getActiveStatusColor(user.active)">
@@ -129,7 +160,11 @@
       </nz-table>
 
       <!-- Loading indicator for infinite scroll -->
-      <div *ngIf="loading && users.length > 0" class="loading-overlay" [style.opacity]="0.8">
+      <div
+        *ngIf="loading && users.length > 0"
+        class="loading-overlay"
+        [style.opacity]="0.8"
+      >
         <nz-spin nzSize="default">
           <div class="loading-content">
             <div class="loading-text">Loading more users...</div>

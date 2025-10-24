@@ -4,7 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { User, UserFilters, SortConfig } from '../models/user.model';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UserService {
   private users: User[] = [];
@@ -12,7 +12,7 @@ export class UserService {
   private currentFilters: UserFilters = {
     searchText: '',
     activeFilter: 'all',
-    ageFilter: 'all'
+    ageFilter: 'all',
   };
   private currentSort: SortConfig = { field: 'firstName', direction: 'asc' };
   private currentPage = 0;
@@ -30,19 +30,19 @@ export class UserService {
 
   private loadMockData(): void {
     this.loadingSubject.next(true);
-    
+
     setTimeout(() => {
       this.http.get<User[]>('/mock-users.json').subscribe({
-        next: (users) => {
+        next: users => {
           this.users = users;
           this.loadingSubject.next(false);
           this.applyFiltersAndSort();
         },
-        error: (error) => {
+        error: error => {
           this.users = [];
           this.loadingSubject.next(false);
           this.applyFiltersAndSort();
-        }
+        },
       });
     }, 1500);
   }
@@ -53,10 +53,11 @@ export class UserService {
     // Apply search filter
     if (this.currentFilters.searchText) {
       const searchLower = this.currentFilters.searchText.toLowerCase();
-      filtered = filtered.filter(user => 
-        user.firstName.toLowerCase().includes(searchLower) ||
-        user.lastName.toLowerCase().includes(searchLower) ||
-        user.phoneNumber.includes(searchLower)
+      filtered = filtered.filter(
+        user =>
+          user.firstName.toLowerCase().includes(searchLower) ||
+          user.lastName.toLowerCase().includes(searchLower) ||
+          user.phoneNumber.includes(searchLower)
       );
     }
 
@@ -73,9 +74,12 @@ export class UserService {
         const birthDate = new Date(user.dateOfBirth);
         const age = now.getFullYear() - birthDate.getFullYear();
         const monthDiff = now.getMonth() - birthDate.getMonth();
-        const actualAge = monthDiff < 0 || (monthDiff === 0 && now.getDate() < birthDate.getDate()) 
-          ? age - 1 : age;
-        
+        const actualAge =
+          monthDiff < 0 ||
+          (monthDiff === 0 && now.getDate() < birthDate.getDate())
+            ? age - 1
+            : age;
+
         if (this.currentFilters.ageFilter === 'under18') {
           return actualAge < 18;
         } else if (this.currentFilters.ageFilter === 'over18') {
@@ -88,7 +92,7 @@ export class UserService {
     // Apply sorting
     filtered.sort((a, b) => {
       let aValue: any, bValue: any;
-      
+
       switch (this.currentSort.field) {
         case 'firstName':
           aValue = a.firstName;
@@ -112,10 +116,10 @@ export class UserService {
     this.filteredUsers = filtered;
     this.currentPage = 0;
     this.hasMoreData = filtered.length > 0;
-    
+
     // Clear existing users and load new ones
     this.usersSubject.next([]);
-    
+
     if (filtered.length > 0) {
       this.loadMoreUsers();
     } else {
@@ -128,7 +132,7 @@ export class UserService {
     const startIndex = this.currentPage * this.pageSize;
     const endIndex = startIndex + this.pageSize;
     const newUsers = this.filteredUsers.slice(startIndex, endIndex);
-    
+
     if (newUsers.length > 0) {
       setTimeout(() => {
         const currentUsers = this.usersSubject.value;
@@ -161,7 +165,10 @@ export class UserService {
     this.applyFiltersAndSort();
   }
 
-  public sortUsers(field: 'firstName' | 'lastName' | 'dateOfBirth', direction: 'asc' | 'desc'): void {
+  public sortUsers(
+    field: 'firstName' | 'lastName' | 'dateOfBirth',
+    direction: 'asc' | 'desc'
+  ): void {
     this.currentSort = { field, direction };
     this.applyFiltersAndSort();
   }

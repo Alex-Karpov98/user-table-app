@@ -17,4 +17,3 @@ export interface SortConfig {
   field: 'firstName' | 'lastName' | 'dateOfBirth';
   direction: 'asc' | 'desc';
 }
-

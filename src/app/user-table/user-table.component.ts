@@ -1,4 +1,11 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzTableModule } from 'ng-zorro-antd/table';
@@ -28,10 +35,10 @@ import { User, SortConfig } from '../models/user.model';
     NzIconModule,
     NzCardModule,
     NzSpinModule,
-    NzEmptyModule
+    NzEmptyModule,
   ],
   templateUrl: './user-table.component.html',
-  styleUrls: ['./user-table.component.scss']
+  styleUrls: ['./user-table.component.scss'],
 })
 export class UserTableComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('tableContainer', { static: false }) tableContainer!: ElementRef;
@@ -51,20 +58,18 @@ export class UserTableComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     // Subscribe to loading state
-    this.userService.loading$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(loading => {
-      this.initialLoading = loading;
-      this.loading = loading;
-    });
+    this.userService.loading$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loading => {
+        this.initialLoading = loading;
+        this.loading = loading;
+      });
 
     // Subscribe to users data
-    this.userService.users$.pipe(
-      takeUntil(this.destroy$)
-    ).subscribe(users => {
+    this.userService.users$.pipe(takeUntil(this.destroy$)).subscribe(users => {
       this.users = users;
       this.loading = false;
-      
+
       // Setup scroll listener after data loads
       if (users.length > 0) {
         setTimeout(() => {
@@ -74,13 +79,11 @@ export class UserTableComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     // Debounce search input
-    this.searchSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      takeUntil(this.destroy$)
-    ).subscribe(searchText => {
-      this.userService.searchUsers(searchText);
-    });
+    this.searchSubject
+      .pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+      .subscribe(searchText => {
+        this.userService.searchUsers(searchText);
+      });
   }
 
   ngAfterViewInit(): void {
@@ -108,7 +111,7 @@ export class UserTableComponent implements OnInit, OnDestroy, AfterViewInit {
     const scrollTop = element.scrollTop;
     const scrollHeight = element.scrollHeight;
     const clientHeight = element.clientHeight;
-    
+
     // Load more when scrolled to bottom
     if (scrollTop + clientHeight >= scrollHeight - 50) {
       if (this.userService.hasMoreDataAvailable() && !this.loading) {
@@ -123,16 +126,22 @@ export class UserTableComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onActiveFilterChange(): void {
-    this.userService.filterByActive(this.activeFilter as 'all' | 'active' | 'inactive');
+    this.userService.filterByActive(
+      this.activeFilter as 'all' | 'active' | 'inactive'
+    );
   }
 
   onAgeFilterChange(): void {
-    this.userService.filterByAge(this.ageFilter as 'all' | 'under18' | 'over18');
+    this.userService.filterByAge(
+      this.ageFilter as 'all' | 'under18' | 'over18'
+    );
   }
 
   onSort(field: 'firstName' | 'lastName' | 'dateOfBirth'): void {
-    const direction = this.currentSort.field === field && this.currentSort.direction === 'asc' 
-      ? 'desc' : 'asc';
+    const direction =
+      this.currentSort.field === field && this.currentSort.direction === 'asc'
+        ? 'desc'
+        : 'asc';
     this.currentSort = { field, direction };
     this.userService.sortUsers(field, direction);
   }
@@ -140,20 +149,30 @@ export class UserTableComponent implements OnInit, OnDestroy, AfterViewInit {
   formatDate(dateString: string): string {
     const date = new Date(dateString);
     const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
+      'January',
+      'February',
+      'March',
+      'April',
+      'May',
+      'June',
+      'July',
+      'August',
+      'September',
+      'October',
+      'November',
+      'December',
     ];
-    
+
     const day = date.getDate().toString().padStart(2, '0');
     const month = months[date.getMonth()];
     const year = date.getFullYear();
-    
+
     return `${day} ${month} ${year}`;
   }
 
   highlightText(text: string, searchText: string): string {
     if (!searchText || !text) return text;
-    
+
     const regex = new RegExp(`(${searchText})`, 'gi');
     return text.replace(regex, '<mark>$1</mark>');
   }
