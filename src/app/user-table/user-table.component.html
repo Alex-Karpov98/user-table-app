@@ -1,0 +1,149 @@
+<div class="user-table-container">
+  <nz-card nzTitle="User Management Table" class="table-card">
+    <!-- Search and Filters Section -->
+    <div class="filters-section">
+      <div class="user-count">
+        <span class="count-text">Loaded: {{ getCurrentUserCount() }} users</span>
+      </div>
+      <div class="search-row">
+        <nz-input-group [nzSuffix]="suffixIconSearch" class="search-input">
+          <input 
+            type="text" 
+            nz-input 
+            placeholder="Search users by name or phone..." 
+            [(ngModel)]="searchText"
+            (input)="onSearchChange()"
+          />
+        </nz-input-group>
+        <ng-template #suffixIconSearch>
+          <i nz-icon nzType="search" nzTheme="outline"></i>
+        </ng-template>
+      </div>
+      
+      <div class="filter-row">
+        <nz-select 
+          [(ngModel)]="activeFilter" 
+          (ngModelChange)="onActiveFilterChange()"
+          class="filter-select"
+          nzPlaceHolder="Filter by status"
+        >
+          <nz-option nzValue="all" nzLabel="All Users"></nz-option>
+          <nz-option nzValue="active" nzLabel="Active Only"></nz-option>
+          <nz-option nzValue="inactive" nzLabel="Inactive Only"></nz-option>
+        </nz-select>
+
+        <nz-select 
+          [(ngModel)]="ageFilter" 
+          (ngModelChange)="onAgeFilterChange()"
+          class="filter-select"
+          nzPlaceHolder="Filter by age"
+        >
+          <nz-option nzValue="all" nzLabel="All Ages"></nz-option>
+          <nz-option nzValue="under18" nzLabel="Under 18"></nz-option>
+          <nz-option nzValue="over18" nzLabel="18 and Over"></nz-option>
+        </nz-select>
+      </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="table-section" #tableContainer>
+      <!-- Initial Loading Spinner -->
+      <div *ngIf="initialLoading" class="initial-loading">
+        <nz-spin nzSize="large">
+          <div class="loading-content">
+            <div class="loading-text">Loading users...</div>
+            <div class="loading-subtext">Fetching data from server</div>
+          </div>
+        </nz-spin>
+      </div>
+
+      <!-- Table with Data -->
+      <nz-table 
+        *ngIf="!initialLoading && users.length > 0"
+        [nzData]="users" 
+        [nzLoading]="loading && !initialLoading"
+        [nzShowPagination]="false"
+        [nzScroll]="{ y: '400px' }"
+        nzSize="middle"
+      >
+        <thead>
+          <tr>
+            <th>No</th>
+            <th 
+              nzSortKey="firstName" 
+              (nzSortOrderChange)="onSort('firstName')"
+              [nzSortOrder]="currentSort.field === 'firstName' ? currentSort.direction : null"
+              class="sortable-header"
+            >
+              <span class="header-content">
+                First Name
+                <i nz-icon [nzType]="getSortIcon('firstName')" nzTheme="outline" class="sort-icon"></i>
+              </span>
+            </th>
+            <th 
+              nzSortKey="lastName" 
+              (nzSortOrderChange)="onSort('lastName')"
+              [nzSortOrder]="currentSort.field === 'lastName' ? currentSort.direction : null"
+              class="sortable-header"
+            >
+              <span class="header-content">
+                Last Name
+                <i nz-icon [nzType]="getSortIcon('lastName')" nzTheme="outline" class="sort-icon"></i>
+              </span>
+            </th>
+            <th 
+              nzSortKey="dateOfBirth" 
+              (nzSortOrderChange)="onSort('dateOfBirth')"
+              [nzSortOrder]="currentSort.field === 'dateOfBirth' ? currentSort.direction : null"
+              class="sortable-header"
+            >
+              <span class="header-content">
+                Date of Birth
+                <i nz-icon [nzType]="getSortIcon('dateOfBirth')" nzTheme="outline" class="sort-icon"></i>
+              </span>
+            </th>
+            <th>Phone Number</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users; trackBy: trackByUserId; let i = index">
+            <td>{{ i + 1 }}</td>
+            <td>
+              <span [innerHTML]="highlightText(user.firstName, searchText)"></span>
+            </td>
+            <td>
+              <span [innerHTML]="highlightText(user.lastName, searchText)"></span>
+            </td>
+            <td>{{ formatDate(user.dateOfBirth) }}</td>
+            <td>
+              <span [innerHTML]="highlightText(user.phoneNumber, searchText)"></span>
+            </td>
+            <td>
+              <nz-tag [nzColor]="getActiveStatusColor(user.active)">
+                {{ getActiveStatusText(user.active) }}
+              </nz-tag>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+
+      <!-- Loading indicator for infinite scroll -->
+      <div *ngIf="loading && users.length > 0" class="loading-overlay" [style.opacity]="0.8">
+        <nz-spin nzSize="default">
+          <div class="loading-content">
+            <div class="loading-text">Loading more users...</div>
+          </div>
+        </nz-spin>
+      </div>
+
+      <!-- Empty state -->
+      <!-- Empty state -->
+      <nz-empty
+      *ngIf="!initialLoading && !loading && users.length === 0 && dataLoadedOnce"
+      nzNotFoundContent="No users found"
+      [nzNotFoundImage]="'/empty.svg'"
+      ></nz-empty>
+    </div>
+  </nz-card>
+</div>

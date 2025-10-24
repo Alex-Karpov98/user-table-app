@@ -1,0 +1,185 @@
+.user-table-container {
+  padding: 24px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+
+  .table-card {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+  }
+
+  .filters-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background-color: #fafafa;
+    border-radius: 6px;
+    border: 1px solid #e8e8e8;
+
+    .user-count {
+      margin-bottom: 16px;
+      text-align: center;
+
+      .count-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: #1890ff;
+        background-color: #e6f7ff;
+        padding: 6px 12px;
+        border-radius: 4px;
+        border: 1px solid #91d5ff;
+      }
+    }
+
+    .search-row {
+      margin-bottom: 16px;
+
+      .search-input {
+        max-width: 400px;
+      }
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+
+      .filter-select {
+        min-width: 150px;
+      }
+    }
+  }
+
+  .table-section {
+    max-height: 500px;
+    overflow-y: auto;
+    border: 1px solid #e8e8e8;
+    border-radius: 6px;
+    position: relative;
+
+    .initial-loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+      background-color: #fafafa;
+
+      .loading-content {
+        text-align: center;
+        padding: 20px;
+
+        .loading-text {
+          font-size: 16px;
+          font-weight: 500;
+          color: #1890ff;
+          margin-bottom: 8px;
+        }
+
+        .loading-subtext {
+          font-size: 14px;
+          color: #666;
+        }
+      }
+    }
+
+    .sortable-header {
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: #f5f5f5;
+      }
+
+      .header-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+
+        .sort-icon {
+          margin-left: 8px;
+          color: #1890ff;
+        }
+      }
+    }
+
+    .loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+
+      .loading-content {
+        text-align: center;
+        padding: 20px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+
+        .loading-text {
+          margin-top: 8px;
+          color: #1890ff;
+          font-weight: 500;
+        }
+      }
+    }
+  }
+}
+
+// Highlight styles for search results
+:host ::ng-deep mark {
+  background-color: #fff3cd;
+  color: #856404;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+}
+
+// Table row hover effects
+:host ::ng-deep .ant-table-tbody > tr:hover > td {
+  background-color: #f0f8ff !important;
+}
+
+// Custom scrollbar for table container
+.table-section::-webkit-scrollbar {
+  width: 8px;
+}
+
+.table-section::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.table-section::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.table-section::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .user-table-container {
+    padding: 16px;
+
+    .filters-section {
+      .filter-row {
+        flex-direction: column;
+        gap: 12px;
+
+        .filter-select {
+          min-width: 100%;
+        }
+      }
+    }
+  }
+}
+
