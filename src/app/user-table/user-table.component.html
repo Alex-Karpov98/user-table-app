@@ -61,7 +61,7 @@
       <nz-table 
         *ngIf="!initialLoading && users.length > 0"
         [nzData]="users" 
-        [nzLoading]="loading && !initialLoading"
+        [nzLoading]="false"
         [nzShowPagination]="false"
         [nzScroll]="{ y: '400px' }"
         nzSize="middle"
@@ -138,11 +138,10 @@
       </div>
 
       <!-- Empty state -->
-      <!-- Empty state -->
       <nz-empty
-      *ngIf="!initialLoading && !loading && users.length === 0 && dataLoadedOnce"
-      nzNotFoundContent="No users found"
-      [nzNotFoundImage]="'/empty.svg'"
+        *ngIf="!initialLoading && !loading && users.length === 0"
+        nzNotFoundContent="No users found"
+        [nzNotFoundImage]="'/empty.svg'"
       ></nz-empty>
     </div>
   </nz-card>
